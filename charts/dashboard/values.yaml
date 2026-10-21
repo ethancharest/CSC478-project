@@ -1,0 +1,68 @@
+# Default settings for the Container Dashboard chart.
+# Override at install time with -f my-values.yaml or --set key=value.
+
+# Shown on the dashboard's "Environment" field.
+environment: fabric
+
+image:
+  # GHCR images built by .github/workflows/build-images.yml
+  registry: ghcr.io/ethancharest
+  # "latest" follows the newest build. For a reproducible deploy, pin a
+  # commit tag such as "sha-515de19" (see the package page on GitHub).
+  tag: latest
+  pullPolicy: Always
+
+frontend:
+  replicas: 2
+  resources:
+    requests: { cpu: 50m, memory: 32Mi }
+    limits:   { cpu: 250m, memory: 128Mi }
+
+backend:
+  replicas: 3
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 256Mi }
+
+database:
+  image: postgres:15-alpine
+  name: csc468
+  user: csc468user
+  # The password is NOT stored here. The chart generates a random one on the
+  # first install and keeps it in a Secret that survives "helm uninstall",
+  # so it still matches the data on NFS when you reinstall.
+  # To use your own Secret instead, set its name (keys: username, password).
+  existingSecret: ""
+  # postgres:15-alpine runs as uid/gid 70. Running as that user (not root)
+  # is required because the NFS export squashes root.
+  runAsUser: 70
+  runAsGroup: 70
+  # Folder inside the NFS export that holds the database files.
+  dataDir: csc478-pgdata
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: "1", memory: 512Mi }
+
+# Static NFS PersistentVolume, same pattern as the Helm/NFS lab.
+# The server and export come from playbook-nfs.yml (node1 exports /opt/data).
+nfs:
+  server: 192.168.1.1
+  path: /opt/data
+
+storage:
+  capacity: 5Gi
+  claimSize: 2Gi
+  reclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4.2
+    - hard
+    - timeo=600
+    - retrans=2
+
+ingress:
+  enabled: true
+  # RKE2 v1.36+ ships Traefik as its ingress controller.
+  # Check the name on your cluster with: kubectl get ingressclass
+  className: traefik
+  # Leave empty to answer on any hostname / node IP.
+  host: ""

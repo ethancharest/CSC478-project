@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # Fixed name: the backend connects to DB_HOST=db.
+  name: db
+  labels:
+    {{- include "dashboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  selector:
+    {{- include "dashboard.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+# A StatefulSet guarantees at most one database pod at a time, so two
+# PostgreSQL processes never write to the same files on NFS.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "dashboard.fullname" . }}-postgres
+  labels:
+    {{- include "dashboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "dashboard.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        {{- include "dashboard.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: database
+      annotations:
+        # Restart the database if init.sql changes (only matters for a fresh data dir).
+        checksum/db-init: {{ .Files.Get "files/init.sql" | sha256sum }}
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.database.runAsUser }}
+        runAsGroup: {{ .Values.database.runAsGroup }}
+        runAsNonRoot: true
+      containers:
+        - name: postgres
+          image: {{ .Values.database.image }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.database.name | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dashboard.dbSecretName" . }}
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dashboard.dbSecretName" . }}
+                  key: password
+            # A subfolder of the NFS mount, so PostgreSQL owns it outright.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/{{ .Values.database.dataDir }}
+          # The first start runs initdb and init.sql over NFS, which can be slow.
+          # The startup probe gives it up to 5 minutes before liveness checks
+          # begin, so Kubernetes never kills it halfway through initialization.
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"]
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"]
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"]
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.database.resources | nindent 12 }}
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+            - name: db-init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: {{ include "dashboard.fullname" . }}-pgdata
+        - name: db-init
+          configMap:
+            name: {{ include "dashboard.fullname" . }}-db-init

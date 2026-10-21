@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dashboard
+description: Container Dashboard (Nginx + Flask + PostgreSQL) for CSC 478 on RKE2
+type: application
+version: 0.1.0
+appVersion: "1.0"

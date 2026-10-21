@@ -1,0 +1,10 @@
+Container Dashboard installed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Watch it come up:
+  kubectl -n {{ .Release.Namespace }} get pods -o wide -w
+
+Test from node1 through the ingress:
+  curl -s http://{{ .Values.nfs.server }}/api/health
+
+Scale the backend:
+  helm upgrade {{ .Release.Name }} <chart> -n {{ .Release.Namespace }} --reuse-values --set backend.replicas=5
