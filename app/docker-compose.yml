@@ -1,0 +1,61 @@
+# Local development only. The cluster deployment uses the Helm chart.
+# Run from this folder:  docker compose up --build   then open http://localhost
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    expose:
+      - "5000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=csc468
+      - DB_USER=csc468user
+      - DB_PASSWORD=csc468pass
+      - ENV=local
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=csc468
+      - POSTGRES_USER=csc468user
+      - POSTGRES_PASSWORD=csc468pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    expose:
+      - "5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csc468user -d csc468"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

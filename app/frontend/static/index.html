@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSC478 Project</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <header>
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-dot"></span>
+                CSC478
+            </div>
+            <div class="header-badge" id="system-status">
+                <span class="pulse"></span>
+                Initializing
+            </div>
+        </div>
+    </header>
+    <main class="container">
+        <div class="hero">
+            <p class="hero-label">Static Site + API Architecture</p>
+            <h1>Container Dashboard</h1>
+            <p class="hero-sub">Nginx frontend · Flask backend · PostgreSQL · Kubernetes (RKE2)</p>
+        </div>
+        <div class="grid">
+            <div class="card card--status">
+                <div class="card-header">
+                    <span class="card-label">Backend Status</span>
+                </div>
+                <p id="health-status" class="status-text">Checking...</p>
+                <p id="db-status" class="db-status"></p>
+                <p id="uptime" class="uptime"></p>
+            </div>
+            <div class="card card--info-small">
+                <div class="card-header">
+                    <span class="card-label">Served By</span>
+                </div>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Pod</span>
+                        <span id="k8s-pod" class="info-value mono">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Node</span>
+                        <span id="k8s-node" class="info-value mono">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Namespace</span>
+                        <span id="k8s-namespace" class="info-value mono">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Python</span>
+                        <span id="container-python" class="info-value mono">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Environment</span>
+                        <span id="environment" class="info-value mono">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Response time</span>
+                        <span id="response-time" class="info-value mono">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card card--log">
+                <div class="card-header">
+                    <span class="card-label">Persistent Log</span>
+                </div>
+                <ul id="entries-list">
+                    <li class="skeleton"></li>
+                    <li class="skeleton"></li>
+                </ul>
+                <div class="add-form">
+                    <textarea id="entry-content" class="form-textarea" placeholder="Write a log entry..."></textarea>
+                    <button id="add-btn" class="form-btn">Add</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
