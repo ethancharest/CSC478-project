@@ -53,11 +53,11 @@ The architecture planned in Deliverable 1 is in [`docs/architecture-deliverable1
 
 ### Prerequisites
 
-- The course's `fabric-examples` environment running in Docker, with a valid FABRIC configuration (bastion key, slice key, project ID).
-- This repository cloned into a git-ignored folder inside `fabric-examples`:
+- The course's `fabric` environment running in Docker, with a valid FABRIC configuration (bastion key, slice key, project ID).
+- This repository cloned into a git-ignored folder inside `fabric`:
 
   ```bash
-  cd fabric-examples
+  cd fabric
   mkdir projects && echo '*' > projects/.gitignore
   git clone https://github.com/ethancharest/CSC478-project.git projects/csc478-project
   ```
